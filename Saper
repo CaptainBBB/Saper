@@ -1,18 +1,19 @@
 import random
+# random.seed(1)
 
 
 class Cell:
-    def __init__(self, mine, around_mines=0):
+    def __init__(self, mine=False, around_mines=0):
         self.around_mines = around_mines
         self.mine = mine
-        self.fl_open = False
+        self.fl_open = True
 
 
 class GamePole:
     def __init__(self, N, M):
         self.N = N
         self.M = M
-        self.pole = [[Cell(False) for _ in range(N)] for _ in range(N)]
+        self.pole = [[Cell() for _ in range(N)] for _ in range(N)]
         self.init()
         self.check_mines()
 
@@ -24,12 +25,8 @@ class GamePole:
             setattr(cell_obj, 'mine', True)
 
     def show(self):
-        empty_list = ''
         for a_row in self.pole:
-            for a_cell in a_row:
-                empty_list += a_cell if getattr(a_cell, 'fl_open') else '#' + ' '
-            empty_list += '\n'
-        return empty_list
+            print(*map(lambda elem: '#' if not elem.fl_open else elem.around_mines if not elem.mine else '*', a_row))
 
     def check_mines(self):
         for inner_list in self.pole:
