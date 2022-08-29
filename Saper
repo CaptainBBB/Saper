@@ -1,0 +1,47 @@
+import random
+
+
+class Cell:
+    def __init__(self, mine, around_mines=0):
+        self.around_mines = around_mines
+        self.mine = mine
+        self.fl_open = False
+
+
+class GamePole:
+    def __init__(self, N, M):
+        self.N = N
+        self.M = M
+        self.pole = [[Cell(False) for _ in range(N)] for _ in range(N)]
+        self.init()
+        self.check_mines()
+
+    def init(self):
+        list_of_cells = []
+        for the_row in self.pole:
+            list_of_cells += the_row
+        for cell_obj in random.sample(list_of_cells, k=self.M):
+            setattr(cell_obj, 'mine', True)
+
+    def show(self):
+        empty_list = ''
+        for a_row in self.pole:
+            for a_cell in a_row:
+                empty_list += a_cell if getattr(a_cell, 'fl_open') else '#' + ' '
+            empty_list += '\n'
+        return empty_list
+
+    def check_mines(self):
+        for inner_list in self.pole:
+            for element in inner_list:
+                index = [item for sublist in self.pole for item in sublist].index(element)
+                row, col = index // self.N, index % self.N
+                for new_row in range(row-1, row+2):
+                    for new_col in range(col-1, col+2):
+                        if new_row == row and new_col == col or new_col >= self.N or new_row >= self.N or new_row <= -1 or new_col <= -1:
+                            continue
+                        if getattr(self.pole[new_row][new_col], 'mine'):
+                            element.around_mines += 1
+
+
+pole_game = GamePole(10, 12)
