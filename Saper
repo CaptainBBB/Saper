@@ -1,44 +1,64 @@
 import random
-# random.seed(1)
 
 
-class Cell:
-    def __init__(self, mine=False, around_mines=0):
-        self.around_mines = around_mines
-        self.mine = mine
-        self.fl_open = False
+class Cell:  # создаем класс, представляющий клетку игрового поля
+    def __init__(self, mine=False, mines_nearby=0):
+        self.mines_nearby = mines_nearby  # в этом локальном свойстве хранится количество мин вокруг клетки
+        self.mine = mine  # присутствует ли мина в клетке; по умолчанию - нет
+        self.fl_open = False  # открыта ли клетка; по умолчанию - нет
 
 
-class GamePole:
+class Game_Board:  # класс отвечающий за игровое поле
     def __init__(self, N, M):
-        self.N = N
-        self.M = M
-        self.pole = [[Cell() for _ in range(N)] for _ in range(N)]
-        self.init()
-        self.check_mines()
+        self.N = N  # длина стороны игрового поля
+        self.M = M  # общее количество мин
+        self.board = [[Cell() for _ in range(N)] for _ in range(N)]  # создаем игровое поле в виде двумерного списка размером N x N элементов
+        self.initialize()  # расставляем мины
+        self.check_mines()  # метод отвечает за подсчет количества мин в соседних клетках
 
-    def init(self):
-        list_of_cells = []
-        for the_row in self.pole:
-            list_of_cells += the_row
-        for cell_obj in random.sample(list_of_cells, k=self.M):
+    def initialize(self):
+        list_of_cells = [item for sublist in self.board for item in sublist]  # разворачиваем двумерный список в одномерный для функции random.sample
+
+        for cell_obj in random.sample(list_of_cells, k=self.M):  # случайным образом расставляем M мин в клетки
             setattr(cell_obj, 'mine', True)
 
-    def show(self):
-        for a_row in self.pole:
-            print(*map(lambda elem: '#' if not elem.fl_open else elem.around_mines if not elem.mine else '*', a_row))
+    def show(self):  # метод показывает клетки игрового поля; если клетка закрыта, то символ # если открыта то кол-во мин рядом, иначе отображает мину как *
+        for a_row in self.board:
+            print(*map(lambda element: '#' if not element.fl_open else element.mines_nearby if not element.mine else '*', a_row))
 
     def check_mines(self):
-        for inner_list in self.pole:
-            for element in inner_list:
-                index = [item for sublist in self.pole for item in sublist].index(element)
-                row, col = index // self.N, index % self.N
-                for new_row in range(row-1, row+2):
-                    for new_col in range(col-1, col+2):
-                        if new_row == row and new_col == col or new_col >= self.N or new_row >= self.N or new_row <= -1 or new_col <= -1:
-                            continue
-                        if getattr(self.pole[new_row][new_col], 'mine'):
-                            element.around_mines += 1
+        list_of_cells = [item for sublist in self.board for item in sublist]  # разворачиваем двумерный список в одномерный
 
+        for element in list_of_cells:
+            if not element.mine:  # перебираем элементы без мин
+                idx = list_of_cells.index(element)
+                row, col = idx // self.N, idx % self.N  # при делении нацело индекса на сторону мы получим индекс влож. списка; при остатке от деления мы получим индекс элемента
 
-pole_game = GamePole(10, 12)
+                for y in range(row-1, row+2):  # перебираем соседние списки
+                    for x in range(col-1, col+2):  # перебираем соседние элементы
+                        if y == row and x == col or x >= self.N or y >= self.N or y <= -1 or x <= -1:
+                            continue  # y и x не должны ссылаться на текущий элемент т.к. подсчитываются мины в соседних; также они должны держаться в пределах существующих индексов
+                        if getattr(self.board[y][x], 'mine'):
+                            element.mines_nearby += 1
+
+    def open_a_cell(self):
+        open_cells_counter = 0  # счетчик открытых клеток
+        a_loop = True  # цикл (игра) по умолчанию равен true
+        while a_loop:
+            try:
+                x, y = int(input('введите координату х: ')) - 1, int(input('введите координату у: ')) - 1
+                setattr(self.board[y][x], 'fl_open', True)
+            except IndexError:
+                print('введено значение несоответствующее размерам поля')
+                continue
+            except ValueError:
+                print('Введите целые числа!')
+                continue
+            if getattr(self.board[y][x], 'mine'):
+                self.show()
+                return 'Вы наступили на мину!'
+            else:
+                open_cells_counter += 1
+                self.show()
+                if open_cells_counter == (self.N * self.N) - self.M:
+                    return 'Вы выиграли'
